@@ -104,6 +104,34 @@ def zmq_stats(server_id):
     return jsonify({'ok': True, 'events': events})
 
 
+@api_bp.route('/debug/<int:server_id>')
+def debug_server(server_id):
+    if session.get('user_role') != 'admin':
+        return jsonify({'ok': False, 'message': 'Tylko admin'}), 403
+    server = database.fetchone('SELECT * FROM servers WHERE id=?', (server_id,))
+    if not server:
+        return jsonify({'ok': False, 'message': 'Brak serwera'}), 404
+    out = {}
+    try:
+        out['ssh_test'] = ssh_client.test_connection()
+    except Exception as e:
+        out['ssh_test'] = {'ok': False, 'message': str(e)}
+    try:
+        out['screen_ls'] = ssh_client.ssh_exec('screen -ls 2>/dev/null || true')
+    except Exception as e:
+        out['screen_ls'] = f'ERROR: {e}'
+    try:
+        out['screen_running'] = ssh_client.is_screen_running(server['screen_name'])
+    except Exception as e:
+        out['screen_running'] = f'ERROR: {e}'
+    try:
+        out['zmq_rcon_raw'] = ssh_client._zmq_rcon(server, 'status')
+    except Exception as e:
+        out['zmq_rcon_raw'] = f'ERROR: {e}'
+    out['server_record'] = dict(server)
+    return jsonify({'ok': True, 'debug': out})
+
+
 @api_bp.route('/zmq/rcon', methods=['POST'])
 def zmq_rcon():
     if session.get('user_role') != 'admin':
