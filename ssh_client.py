@@ -41,9 +41,12 @@ def test_connection() -> dict:
 
 def is_screen_running(screen_name: str) -> bool:
     out = ssh_exec(
-        f'screen -ls 2>/dev/null | grep -c {screen_name!r} || echo 0'
+        f'screen -ls 2>/dev/null | grep -c {screen_name!r} || true'
     )
-    return int(out.strip() or '0') > 0
+    try:
+        return int(out.strip().splitlines()[0]) > 0
+    except (ValueError, IndexError):
+        return False
 
 
 def _parse_status(raw: str) -> tuple[dict, list]:
