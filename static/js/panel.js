@@ -13,7 +13,7 @@ function refreshDashboard(serverIds) {
     const el = document.getElementById('last-refresh');
     if (el) el.textContent = 'Ostatni refresh: ' + ts;
 
-    fetch('/api/status.php')
+    fetch('/api/status')
         .then(r => r.json())
         .then(data => {
             if (!data.ok) return;
@@ -91,7 +91,7 @@ function startServerDetail(serverId) {
 }
 
 function refreshServerDetail(serverId) {
-    fetch('/api/status.php?server_id=' + serverId)
+    fetch('/api/status/' + serverId)
         .then(r => r.json())
         .then(data => {
             if (!data.ok) return;
@@ -136,7 +136,7 @@ function updatePlayerTable(players) {
 const zmqSeenIds = new Set();
 
 function refreshZmq(serverId) {
-    fetch('/api/zmq.php?server_id=' + serverId + '&limit=30')
+    fetch('/api/zmq/stats/' + serverId + '?limit=30')
         .then(r => r.json())
         .then(data => {
             if (!data.ok || !data.events) return;
@@ -188,7 +188,7 @@ function formatTime(ts) {
 // ── Server control from dashboard ──────────────────────────
 function controlServer(serverId, action) {
     if (!confirm('Wykonać akcję "' + action + '" na serwerze #' + serverId + '?')) return;
-    fetch('/api/control.php', {
+    fetch('/api/control', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({server_id: serverId, action: action})
