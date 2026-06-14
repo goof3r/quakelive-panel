@@ -71,8 +71,8 @@ if [ -d "$VENV_DIR" ]; then
   log "Katalog venv/ już istnieje — aktualizuję..."
 else
   log "Tworzę virtual environment w $VENV_DIR..."
-  python3 -m venv "$VENV_DIR"
 fi
+python3 -m venv "$VENV_DIR"
 ok "Venv gotowy: $VENV_DIR"
 
 # ── 4. Zainstaluj zależności Python ───────────────────────────────────────────
