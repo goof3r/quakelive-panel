@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ config.PANEL_TITLE }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+
+{% block navbar %}
+<nav class="navbar">
+  <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+    <img src="{{ url_for('static', filename='img/ql-logo.svg') }}" alt="QL" class="navbar-logo">
+    <span class="navbar-title">{{ config.PANEL_TITLE }}</span>
+  </a>
+  <div class="navbar-nav">
+    {% if user %}
+      <a class="nav-link {% block nav_dashboard %}{% endblock %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+      {% if user.role == 'admin' %}
+      <a class="nav-link {% block nav_admin %}{% endblock %}" href="{{ url_for('admin.index') }}">Admin</a>
+      {% endif %}
+      <span class="nav-user">{{ user.name }} [{{ user.role }}]</span>
+      <a class="nav-link" href="{{ url_for('main.logout') }}">Wyloguj</a>
+    {% endif %}
+  </div>
+</nav>
+{% endblock %}
+
+{% block body %}{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/panel.js') }}"></script>
+{% endblock %}
+</body>
+</html>

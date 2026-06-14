@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}{{ server.name }} — {{ config.PANEL_TITLE }}{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block body %}
+<div class="container">
+  <div class="page-title">{{ server.name }}</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Informacje serwera</span>
+        <span id="srv-status-badge" class="badge-offline">Sprawdzanie…</span>
+      </div>
+      <div class="card-body">
+        <table class="ql-table">
+          <tr><td class="text-muted fs-xs">Host</td><td class="text-mono">{{ server.host }}:{{ server.game_port }}</td></tr>
+          <tr><td class="text-muted fs-xs">Screen</td><td class="text-mono">{{ server.screen_name }}</td></tr>
+          <tr><td class="text-muted fs-xs">ZMQ Rcon</td><td class="text-mono">:{{ server.zmq_rcon_port or (server.game_port + 1000) }}</td></tr>
+          <tr><td class="text-muted fs-xs">ZMQ Stats</td><td class="text-mono">:{{ server.zmq_stats_port or server.game_port }}</td></tr>
+          <tr><td class="text-muted fs-xs">Mapa</td><td id="srv-map">—</td></tr>
+          <tr><td class="text-muted fs-xs">Tryb</td><td id="srv-gt">—</td></tr>
+          <tr><td class="text-muted fs-xs">Gracze</td><td id="srv-players">—</td></tr>
+        </table>
+
+        {% if user.role == 'admin' %}
+        <div class="btn-group mt-2">
+          <button class="btn btn-success btn-sm" onclick="srvControl('start')">Start</button>
+          <button class="btn btn-warning btn-sm" onclick="srvControl('restart')">Restart</button>
+          <button class="btn btn-danger btn-sm"  onclick="srvControl('stop')">Stop</button>
+        </div>
+        <div id="ctrl-msg" class="alert mt-1" style="display:none"></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Gracze online</span>
+        <span class="text-muted fs-xs" id="players-count">0</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="ql-table">
+          <thead><tr><th>#</th><th>Nick</th><th>Score</th><th>Ping</th></tr></thead>
+          <tbody id="player-tbody">
+            <tr><td colspan="4" class="text-muted" style="padding:14px">Brak graczy</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">ZMQ Live Stats</span>
+      <span class="text-muted fs-xs">Auto-refresh co 5s</span>
+    </div>
+    <div class="card-body" style="padding:10px">
+      <div class="zmq-feed" id="zmq-feed">
+        <div class="zmq-event">
+          <span class="zmq-event-time">--:--:--</span>
+          <span class="zmq-event-type">SYSTEM</span>
+          <span class="zmq-event-body">Oczekiwanie na dane ZMQ…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if user.role == 'admin' %}
+  <div class="card mt-2">
+    <div class="card-header">
+      <span class="card-title">Rcon Console</span>
+      <span class="text-muted fs-xs">Tylko dla admina</span>
+    </div>
+    <div class="card-body">
+      <div class="rcon-console" id="rcon-output">// Quake Live Rcon Console
+// Wpisz komendę i naciśnij Enter lub kliknij Wyślij
+</div>
+      <div class="rcon-input-row">
+        <input class="rcon-input" type="text" id="rcon-cmd"
+               placeholder="np. status, map campgrounds ffa, say Hello" maxlength="256">
+        <button class="btn btn-danger" onclick="sendRcon()">Wyślij</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/panel.js') }}"></script>
+<script>
+const SERVER_ID = {{ server.id }};
+const IS_ADMIN  = {{ (user.role == 'admin') | tojson }};
+startServerDetail(SERVER_ID);
+
+function srvControl(action) {
+  if (!confirm('Wykonać: ' + action + '?')) return;
+  const msg = document.getElementById('ctrl-msg');
+  msg.className = 'alert alert-info mt-1';
+  msg.style.display = 'block';
+  msg.textContent = 'Wykonuję: ' + action + '…';
+  fetch('/api/control', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({server_id: SERVER_ID, action: action})
+  }).then(r => r.json()).then(d => {
+    msg.className = 'alert ' + (d.ok ? 'alert-success' : 'alert-error') + ' mt-1';
+    msg.textContent = d.message;
+  }).catch(() => {
+    msg.className = 'alert alert-error mt-1';
+    msg.textContent = 'Błąd połączenia.';
+  });
+}
+
+function sendRcon() {
+  const cmd = document.getElementById('rcon-cmd').value.trim();
+  if (!cmd) return;
+  const out = document.getElementById('rcon-output');
+  out.textContent += '\n> ' + cmd;
+  document.getElementById('rcon-cmd').value = '';
+  fetch('/api/zmq/rcon', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({server_id: SERVER_ID, cmd: cmd})
+  }).then(r => r.json()).then(d => {
+    out.textContent += '\n' + (d.response || '(brak odpowiedzi)');
+    out.scrollTop = out.scrollHeight;
+  });
+}
+
+document.getElementById('rcon-cmd')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendRcon();
+});
+</script>
+{% endblock %}

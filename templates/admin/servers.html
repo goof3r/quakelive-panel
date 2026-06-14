@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Serwery — {{ config.PANEL_TITLE }}{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block body %}
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a class="admin-menu-item" href="{{ url_for('admin.index') }}">Przegląd</a>
+    <a class="admin-menu-item" href="{{ url_for('admin.users') }}">Użytkownicy</a>
+    <a class="admin-menu-item active" href="{{ url_for('admin.servers') }}">Serwery</a>
+    <a class="admin-menu-item" href="{{ url_for('admin.logs') }}">Logi akcji</a>
+    <a class="admin-menu-item" href="{{ url_for('main.dashboard') }}">← Dashboard</a>
+  </aside>
+
+  <div class="admin-content">
+    <div class="page-title">Zarządzanie serwerami QL</div>
+
+    {% if message %}
+    <div class="alert alert-{{ msg_type }}">{{ message }}</div>
+    {% endif %}
+
+    <div class="card mb-2">
+      <div class="card-header"><span class="card-title">Dodaj serwer</span></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="add">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Nazwa</label>
+              <input class="form-control" type="text" name="name" placeholder="FT Server" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">IP serwera QL</label>
+              <input class="form-control" type="text" name="host" placeholder="1.2.3.4" required>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Port gry</label>
+              <input class="form-control" type="number" name="game_port" value="27960"
+                     id="gp" oninput="ap(this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ZMQ Stats</label>
+              <input class="form-control" type="number" name="zmq_stats" value="27960" id="zs">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ZMQ Rcon</label>
+              <input class="form-control" type="number" name="zmq_rcon" value="28960" id="zr">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Sesja screen</label>
+              <input class="form-control" type="text" name="screen_name" placeholder="qlserver-ft">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Skrypt start</label>
+              <input class="form-control" type="text" name="start_script" placeholder="start-ft.sh">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sort order</label>
+              <input class="form-control" type="number" name="sort_order" value="99">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Hasło rcon</label>
+              <input class="form-control" type="text" name="rcon_pass">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hasło stats</label>
+              <input class="form-control" type="text" name="stats_pass">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success">+ Dodaj serwer</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body" style="padding:0">
+        <table class="ql-table">
+          <thead><tr><th>Nazwa</th><th>Host</th><th>Port</th><th>Screen</th><th>Aktywny</th><th>Akcje</th></tr></thead>
+          <tbody>
+          {% for s in servers %}
+          <tr>
+            <td class="fw-bold">{{ s.name }}</td>
+            <td class="text-mono fs-xs">{{ s.host }}</td>
+            <td class="text-mono fs-xs">{{ s.game_port }}</td>
+            <td class="text-mono fs-xs">{{ s.screen_name or '—' }}</td>
+            <td><span class="{{ 'text-success' if s.enabled else 'text-danger' }}">{{ '✓' if s.enabled else '✗' }}</span></td>
+            <td>
+              <div class="btn-group">
+                <form method="POST" style="display:inline">
+                  <input type="hidden" name="action" value="toggle">
+                  <input type="hidden" name="server_id" value="{{ s.id }}">
+                  <button type="submit" class="btn btn-warning btn-sm">
+                    {{ 'Wyłącz' if s.enabled else 'Włącz' }}
+                  </button>
+                </form>
+                <form method="POST" style="display:inline"
+                      onsubmit="return confirm('Usunąć serwer {{ s.name }}?')">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="server_id" value="{{ s.id }}">
+                  <button type="submit" class="btn btn-danger btn-sm">Usuń</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-muted" style="padding:14px">Brak serwerów.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function ap(v) {
+  v = parseInt(v)||27960;
+  document.getElementById('zs').value = v;
+  document.getElementById('zr').value = v+1000;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Login — {{ config.PANEL_TITLE }}{% endblock %}
+{% block navbar %}{% endblock %}
+
+{% block body %}
+<div class="login-wrapper">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="{{ url_for('static', filename='img/ql-logo.svg') }}" alt="QL" class="login-logo-img">
+      <div class="login-title">{{ config.PANEL_TITLE }}</div>
+      <div class="login-subtitle">Server Management System</div>
+    </div>
+
+    <hr class="login-divider">
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" autocomplete="off">
+      <div class="form-group">
+        <label class="form-label" for="username">Login</label>
+        <input class="form-control" type="text" id="username" name="username"
+               placeholder="username" autofocus maxlength="64">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Hasło</label>
+        <input class="form-control" type="password" id="password" name="password"
+               placeholder="••••••••" maxlength="128">
+      </div>
+      <button type="submit" class="btn btn-login">Zaloguj się</button>
+    </form>
+
+    <div class="mt-2" style="text-align:center">
+      <span class="text-muted fs-xs">// QUAKE LIVE DEDICATED SERVER PANEL //</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% endblock %}

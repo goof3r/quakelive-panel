@@ -1,0 +1,10 @@
+config.py
+panel.db
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+.installed
+bridge/bridge_config.json

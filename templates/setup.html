@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konfiguracja — QL Server Panel</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.wizard-steps { display:flex; gap:0; margin-bottom:28px; }
+.wstep {
+  flex:1; text-align:center; padding:10px 4px;
+  font-family:var(--font-hud); font-size:0.65rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:1px; color:var(--color-muted);
+  border-bottom:2px solid var(--border-dim);
+}
+.wstep.active { color:var(--color-accent); border-bottom-color:var(--border-main); }
+.wstep.done   { color:var(--color-online); border-bottom-color:#006622; }
+.wstep-num { display:block; font-size:1.1rem; font-weight:900; margin-bottom:3px; }
+.setup-box { max-width:680px; margin:0 auto; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="#">
+    <img src="{{ url_for('static', filename='img/ql-logo.svg') }}" alt="QL" class="navbar-logo">
+    <span class="navbar-title">Kreator instalacji — QL Server Panel</span>
+  </a>
+  <div class="navbar-nav">
+    <span class="text-muted fs-xs">Krok {{ step }} / 3</span>
+  </div>
+</nav>
+
+<div class="container">
+<div class="setup-box">
+
+  <div class="wizard-steps">
+    {% set steps = ['SSH & Config', 'Konto admina', 'Serwery QL'] %}
+    {% for i in range(1, 4) %}
+    <div class="wstep {{ 'done' if i < step else ('active' if i == step else '') }}">
+      <span class="wstep-num">{{ '✓' if i < step else i }}</span>
+      {{ steps[i-1] }}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% for e in errors %}
+  <div class="alert alert-error">{{ e }}</div>
+  {% endfor %}
+  {% for i in info %}
+  <div class="alert alert-success">{{ i }}</div>
+  {% endfor %}
+
+  {# ── KROK 1: SSH + Config ── #}
+  {% if step == 1 %}
+  <div class="card">
+    <div class="card-header"><span class="card-title">Konfiguracja SSH i panelu</span></div>
+    <div class="card-body">
+      <div class="alert alert-info">
+        Panel łączy się z serwerem QL przez SSH. Potrzebujesz klucza SSH bez hasła.<br>
+        <strong>Jak wygenerować klucz:</strong><br>
+        <code>ssh-keygen -t ed25519 -f ~/.ssh/ql_key -N ""</code><br>
+        <code>ssh-copy-id -i ~/.ssh/ql_key.pub USER@SERWER_QL</code>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="action" value="save_config">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">IP / Hostname serwera QL</label>
+            <input class="form-control" type="text" name="ssh_host" placeholder="1.2.3.4" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Port SSH</label>
+            <input class="form-control" type="number" name="ssh_port" value="22">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Użytkownik SSH na serwerze QL</label>
+          <input class="form-control" type="text" name="ssh_user" placeholder="qladmin" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ścieżka klucza prywatnego SSH (na tym serwerze)</label>
+          <input class="form-control" type="text" name="ssh_key"
+                 placeholder="/home/user/.ssh/id_ed25519" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Katalog QLDS na serwerze QL</label>
+          <input class="form-control" type="text" name="qlds_dir"
+                 value="/home/qladmin/qlds" placeholder="/home/qladmin/qlds">
+        </div>
+        <div class="section-sep">ZMQ Bridge (opcjonalnie)</div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Adres bridge.py</label>
+            <input class="form-control" type="text" name="bridge_url"
+                   value="http://127.0.0.1:8765">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Token bridge</label>
+            <input class="form-control" type="text" name="bridge_token" placeholder="bearer_token">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Tytuł panelu</label>
+            <input class="form-control" type="text" name="panel_title" value="QL Server Panel">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Port panelu</label>
+            <input class="form-control" type="number" name="port" value="9999">
+          </div>
+        </div>
+        <div class="text-right">
+          <button type="submit" class="btn btn-danger">Zapisz config.py →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── KROK 2: Admin ── #}
+  {% elif step == 2 %}
+  <div class="card">
+    <div class="card-header"><span class="card-title">Konto administratora</span></div>
+    <div class="card-body">
+      <div class="alert alert-success">config.py zapisany. Teraz utwórz konto admina.</div>
+      <form method="POST">
+        <input type="hidden" name="action" value="create_admin">
+        <div class="form-group">
+          <label class="form-label">Login</label>
+          <input class="form-control" type="text" name="admin_user" value="admin"
+                 maxlength="64" required>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Hasło (min. 8 znaków)</label>
+            <input class="form-control" type="password" name="admin_pass" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Powtórz hasło</label>
+            <input class="form-control" type="password" name="admin_pass2" required>
+          </div>
+        </div>
+        <div class="text-right">
+          <button type="submit" class="btn btn-danger">Utwórz konto →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── KROK 3: Serwery QL ── #}
+  {% elif step == 3 %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Dodaj serwery Quake Live</span>
+      <span class="text-muted fs-xs">Możesz dodać więcej w Admin → Serwery</span>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-success">Konto admina gotowe!</div>
+      <form method="POST" id="srv-form">
+        <input type="hidden" name="action" value="add_server">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Nazwa serwera</label>
+            <input class="form-control" type="text" name="srv_name" placeholder="FT Server">
+          </div>
+          <div class="form-group">
+            <label class="form-label">IP serwera QL</label>
+            <input class="form-control" type="text" name="srv_host" placeholder="1.2.3.4">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Port gry</label>
+            <input class="form-control" type="number" name="game_port" value="27960"
+                   id="gport" oninput="autoFillPorts(this.value)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ZMQ Stats</label>
+            <input class="form-control" type="number" name="zmq_stats" value="27960" id="zst">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ZMQ Rcon</label>
+            <input class="form-control" type="number" name="zmq_rcon" value="28960" id="zrc">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Nazwa sesji screen</label>
+            <input class="form-control" type="text" name="screen_name" placeholder="qlserver-ft">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Skrypt startowy</label>
+            <input class="form-control" type="text" name="start_script" placeholder="start-ft.sh">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Hasło rcon</label>
+            <input class="form-control" type="text" name="rcon_pass">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hasło stats</label>
+            <input class="form-control" type="text" name="stats_pass">
+          </div>
+        </div>
+        <div class="d-flex justify-between align-center">
+          <button type="submit" class="btn btn-warning">+ Dodaj serwer</button>
+          <form method="POST" style="display:inline">
+            <input type="hidden" name="action" value="finish">
+            <button type="submit" class="btn btn-danger">Zakończ instalację ✓</button>
+          </form>
+        </div>
+      </form>
+      <div class="alert alert-warn mt-2 fs-xs">
+        Hasła rcon/stats znajdziesz w plikach <code>start-*.sh</code> na serwerze QL
+        przy parametrach <code>+set zmq_rcon_password</code> i <code>+set zmq_stats_password</code>.
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+
+<script>
+function autoFillPorts(v) {
+  v = parseInt(v) || 27960;
+  const st = document.getElementById('zst');
+  const rc = document.getElementById('zrc');
+  if (st) st.value = v;
+  if (rc) rc.value = v + 1000;
+}
+</script>
+</body>
+</html>
