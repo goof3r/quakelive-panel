@@ -117,13 +117,15 @@ def debug_server(server_id):
     except Exception as e:
         out['ssh_test'] = {'ok': False, 'message': str(e)}
     try:
-        out['screen_ls'] = ssh_client.ssh_exec('screen -ls 2>/dev/null || true')
+        out['systemctl_status'] = ssh_client.ssh_exec(
+            f"systemctl is-active {server['screen_name']}.service 2>/dev/null || true"
+        )
     except Exception as e:
-        out['screen_ls'] = f'ERROR: {e}'
+        out['systemctl_status'] = f'ERROR: {e}'
     try:
-        out['screen_running'] = ssh_client.is_screen_running(server['screen_name'])
+        out['service_active'] = ssh_client.is_service_active(server['screen_name'])
     except Exception as e:
-        out['screen_running'] = f'ERROR: {e}'
+        out['service_active'] = f'ERROR: {e}'
     try:
         out['zmq_rcon_raw'] = ssh_client._zmq_rcon(server, 'status')
     except Exception as e:

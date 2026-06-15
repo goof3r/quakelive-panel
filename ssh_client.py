@@ -39,14 +39,9 @@ def test_connection() -> dict:
         return {'ok': False, 'message': f'SSH error: {e}'}
 
 
-def is_screen_running(screen_name: str) -> bool:
-    out = ssh_exec(
-        f'screen -ls 2>/dev/null | grep -c {screen_name!r} || true'
-    )
-    try:
-        return int(out.strip().splitlines()[0]) > 0
-    except (ValueError, IndexError):
-        return False
+def is_service_active(service_name: str) -> bool:
+    out = ssh_exec(f'systemctl is-active {service_name}.service 2>/dev/null || true')
+    return out.strip() == 'active'
 
 
 def _parse_status(raw: str) -> tuple[dict, list]:
@@ -97,7 +92,8 @@ def _zmq_rcon(server: dict, cmd: str) -> str:
 
 
 def get_server_status(server: dict) -> dict:
-    running = is_screen_running(server['screen_name'])
+    service = server['screen_name']
+    running = is_service_active(service)
     info, players = {}, []
 
     if running:
@@ -106,38 +102,37 @@ def get_server_status(server: dict) -> dict:
             info, players = _parse_status(raw)
 
     return {
-        'running':      running,
-        'screen_name':  server.get('screen_name', ''),
-        'info':         info,
-        'players':      players,
+        'running':     running,
+        'screen_name': service,
+        'info':        info,
+        'players':     players,
     }
 
 
 def start_server(server: dict) -> bool:
-    script = f"{config.QLDS_DIR}/{server['start_script']}"
-    screen = server['screen_name']
-    cmd = (
-        f"screen -dmS {screen} bash -c {script!r} && sleep 2"
-    )
-    ssh_exec(cmd)
-    return is_screen_running(screen)
+    service = server['screen_name']
+    ssh_exec(f'systemctl start {service}.service 2>/dev/null || true')
+    time.sleep(2)
+    return is_service_active(service)
 
 
 def stop_server(server: dict) -> bool:
-    screen = server['screen_name']
-    ssh_exec(f"screen -S {screen} -X stuff 'quit\\n' 2>/dev/null; sleep 2")
-    return not is_screen_running(screen)
+    service = server['screen_name']
+    ssh_exec(f'systemctl stop {service}.service 2>/dev/null || true')
+    time.sleep(2)
+    return not is_service_active(service)
 
 
 def restart_server(server: dict) -> bool:
-    stop_server(server)
-    time.sleep(2)
-    return start_server(server)
+    service = server['screen_name']
+    ssh_exec(f'systemctl restart {service}.service 2>/dev/null || true')
+    time.sleep(3)
+    return is_service_active(service)
 
 
 def get_log(server: dict, lines: int = 50) -> str:
-    log_file = f"{config.QLDS_DIR}/baseq3/{server['screen_name']}.log"
+    service = server['screen_name']
     try:
-        return ssh_exec(f"tail -n {lines} {log_file!r} 2>/dev/null")
+        return ssh_exec(f'journalctl -u {service}.service -n {lines} --no-pager 2>/dev/null || true')
     except Exception:
         return ''
