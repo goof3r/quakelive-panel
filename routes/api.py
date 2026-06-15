@@ -130,6 +130,29 @@ def debug_server(server_id):
         out['zmq_rcon_raw'] = ssh_client._zmq_rcon(server, 'status')
     except Exception as e:
         out['zmq_rcon_raw'] = f'ERROR: {e}'
+    host = server.get('host', '127.0.0.1')
+    rcon_port = server.get('zmq_rcon_port') or (server.get('game_port', 27960) + 1000)
+    stats_port = server.get('zmq_stats_port') or server.get('game_port', 27960)
+    try:
+        out['zmq_module'] = ssh_client.ssh_exec_with_stderr('python3 -c "import zmq; print(zmq.__version__)"')
+    except Exception as e:
+        out['zmq_module'] = f'ERROR: {e}'
+    try:
+        out['port_rcon'] = ssh_client.ssh_exec(
+            f'ss -tlnp 2>/dev/null | grep :{rcon_port} || echo "port {rcon_port} not listening"'
+        )
+    except Exception as e:
+        out['port_rcon'] = f'ERROR: {e}'
+    try:
+        out['port_stats'] = ssh_client.ssh_exec(
+            f'ss -ulnp 2>/dev/null | grep :{stats_port} || echo "port {stats_port} not listening"'
+        )
+    except Exception as e:
+        out['port_stats'] = f'ERROR: {e}'
+    try:
+        out['zmq_rcon_debug'] = ssh_client.zmq_rcon_debug(server)
+    except Exception as e:
+        out['zmq_rcon_debug'] = f'ERROR: {e}'
     out['server_record'] = dict(server)
     return jsonify({'ok': True, 'debug': out})
 

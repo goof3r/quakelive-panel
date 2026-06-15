@@ -29,6 +29,47 @@ def ssh_exec(cmd: str) -> str:
         client.close()
 
 
+def ssh_exec_with_stderr(cmd: str) -> str:
+    client = _connect()
+    try:
+        _, stdout, stderr = client.exec_command(cmd, timeout=15)
+        out = stdout.read().decode('utf-8', errors='replace')
+        err = stderr.read().decode('utf-8', errors='replace')
+        return (out + ('\nSTDERR: ' + err if err.strip() else '')).strip()
+    finally:
+        client.close()
+
+
+def zmq_rcon_debug(server: dict) -> str:
+    host     = server.get('host', '127.0.0.1')
+    port     = server.get('zmq_rcon_port') or (server.get('game_port', 27960) + 1000)
+    password = server.get('rcon_password', '')
+    script = (
+        f"import zmq, json\n"
+        f"ctx = zmq.Context()\n"
+        f"s = ctx.socket(zmq.DEALER)\n"
+        f"s.plain_username = b'rcon'\n"
+        f"s.plain_password = {password!r}.encode()\n"
+        f"s.connect('tcp://{host}:{port}')\n"
+        f"s.send_multipart([b'', json.dumps({{'cmd': 'status'}}).encode()])\n"
+        f"print(s.recv_multipart()[-1].decode() if s.poll(3000) else '(timeout)')\n"
+        f"s.close()\n"
+        f"ctx.term()\n"
+    )
+    client = _connect()
+    try:
+        sftp = client.open_sftp()
+        with sftp.file('/tmp/_ql_debug_zmq.py', 'w') as f:
+            f.write(script)
+        sftp.close()
+        _, stdout, stderr = client.exec_command('python3 /tmp/_ql_debug_zmq.py 2>&1', timeout=10)
+        out = stdout.read().decode('utf-8', errors='replace')
+        err = stderr.read().decode('utf-8', errors='replace')
+        return (out + err).strip()
+    finally:
+        client.close()
+
+
 def test_connection() -> dict:
     try:
         out = ssh_exec('hostname && echo "SSH_OK"')
