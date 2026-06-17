@@ -4,48 +4,45 @@
 
 {% block body %}
 <div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a class="admin-menu-item active" href="{{ url_for('admin.index') }}">Przegląd</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.users') }}">Użytkownicy</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.servers') }}">Serwery</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.logs') }}">Logi akcji</a>
-    <a class="admin-menu-item" href="{{ url_for('main.dashboard') }}">← Dashboard</a>
-  </aside>
+  {% with active='index' %}{% include 'admin/_sidebar.html' %}{% endwith %}
 
   <div class="admin-content">
     <div class="page-title">Panel administracyjny</div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
-      <div class="card" style="text-align:center;padding:20px">
-        <div style="font-family:var(--font-hud);font-size:2.5rem;font-weight:900;color:var(--color-accent)">{{ srv_count }}</div>
-        <div class="text-muted fs-xs" style="margin-top:6px;text-transform:uppercase;letter-spacing:2px">Serwery</div>
+    <div class="stat-tiles">
+      <div class="stat-tile">
+        <div class="stat-tile-val">{{ srv_count }}</div>
+        <div class="stat-tile-lbl">Serwery</div>
       </div>
-      <div class="card" style="text-align:center;padding:20px">
-        <div style="font-family:var(--font-hud);font-size:2.5rem;font-weight:900;color:var(--color-gold)">{{ usr_count }}</div>
-        <div class="text-muted fs-xs" style="margin-top:6px;text-transform:uppercase;letter-spacing:2px">Użytkownicy</div>
+      <div class="stat-tile t2">
+        <div class="stat-tile-val">{{ usr_count }}</div>
+        <div class="stat-tile-lbl">Użytkownicy</div>
       </div>
-      <div class="card" style="text-align:center;padding:20px">
-        <div style="font-family:var(--font-hud);font-size:2.5rem;font-weight:900;color:var(--color-online)">{{ log_count }}</div>
-        <div class="text-muted fs-xs" style="margin-top:6px;text-transform:uppercase;letter-spacing:2px">Wpisy logów</div>
+      <div class="stat-tile t3">
+        <div class="stat-tile-val">{{ log_count }}</div>
+        <div class="stat-tile-lbl">Wpisy logów</div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header"><span class="card-title">Ostatnie 20 akcji</span></div>
-      <div class="card-body" style="padding:0">
-        <table class="ql-table">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Ostatnie 20 akcji</span>
+        <a class="text-mono text-muted" href="{{ url_for('admin.logs') }}">all →</a>
+      </div>
+      <div class="panel-body tight">
+        <table class="tbl">
           <thead><tr><th>Czas</th><th>User</th><th>Serwer</th><th>Akcja</th><th>IP</th></tr></thead>
           <tbody>
           {% for l in logs %}
           <tr>
-            <td class="text-mono fs-xs">{{ l.created_at }}</td>
-            <td class="text-accent">{{ l.username or '—' }}</td>
+            <td class="mono">{{ l.created_at }}</td>
+            <td><span class="text-accent">{{ l.username or '—' }}</span></td>
             <td>{{ l.server_name or '—' }}</td>
-            <td class="fw-bold">{{ l.action }}</td>
-            <td class="text-muted fs-xs text-mono">{{ l.ip or '' }}</td>
+            <td>{{ l.action }}</td>
+            <td class="mono">{{ l.ip or '' }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="5" class="text-muted" style="padding:14px">Brak wpisów.</td></tr>
+          <tr><td colspan="5" class="text-muted text-center" style="padding:18px">Brak wpisów</td></tr>
           {% endfor %}
           </tbody>
         </table>
@@ -54,3 +51,5 @@
   </div>
 </div>
 {% endblock %}
+
+{% block bar %}{% endblock %}

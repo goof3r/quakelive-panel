@@ -177,3 +177,76 @@ def get_log(server: dict, lines: int = 50) -> str:
         return ssh_exec(f'journalctl -u {service}.service -n {lines} --no-pager 2>/dev/null || true')
     except Exception:
         return ''
+
+
+def get_system_stats() -> dict:
+    """
+    Zwraca uproszczone metryki maszyny QL: load, mem MiB, dysk %, uptime.
+    """
+    cmd = (
+        'awk \'{print "LOAD="$1" "$2" "$3}\' /proc/loadavg && '
+        'awk \'/MemTotal/ {t=$2} /MemAvailable/ {a=$2} '
+        'END {printf "MEM=%d %d\\n", t/1024, (t-a)/1024}\' /proc/meminfo && '
+        'df -BM / | awk \'NR==2 {gsub("M","",$2); gsub("M","",$3); '
+        'gsub("%","",$5); printf "DISK=%d %d %d\\n", $2, $3, $5}\' && '
+        'awk \'{printf "UPSEC=%d\\n", $1}\' /proc/uptime && '
+        'nproc | awk \'{printf "CPUS=%d\\n", $1}\''
+    )
+    out = {'ok': False, 'raw': ''}
+    try:
+        raw = ssh_exec(cmd).strip()
+        out['raw'] = raw
+        for line in raw.splitlines():
+            line = line.strip()
+            if line.startswith('LOAD='):
+                parts = line[5:].split()
+                if len(parts) >= 3:
+                    out['load1']  = float(parts[0])
+                    out['load5']  = float(parts[1])
+                    out['load15'] = float(parts[2])
+            elif line.startswith('MEM='):
+                parts = line[4:].split()
+                if len(parts) >= 2:
+                    out['mem_total_mib'] = int(parts[0])
+                    out['mem_used_mib']  = int(parts[1])
+            elif line.startswith('DISK='):
+                parts = line[5:].split()
+                if len(parts) >= 3:
+                    out['disk_total_mib'] = int(parts[0])
+                    out['disk_used_mib']  = int(parts[1])
+                    out['disk_pct']       = int(parts[2])
+            elif line.startswith('UPSEC='):
+                out['uptime_sec'] = int(line[6:])
+            elif line.startswith('CPUS='):
+                out['cpus'] = int(line[5:])
+        out['ok'] = 'mem_total_mib' in out
+    except Exception as e:
+        out['error'] = str(e)
+    return out
+
+
+def get_services_status(servers: list[dict]) -> dict:
+    """
+    Sprawdza status systemd dla wszystkich screen_name jednym połączeniem SSH.
+    Zwraca {server_id: 'active'|'inactive'|'unknown'}.
+    """
+    result = {}
+    pairs  = [(s['id'], s.get('screen_name') or '') for s in servers if s.get('screen_name')]
+    if not pairs:
+        return result
+    cmd = '; '.join(
+        f'echo "{sid}:$(systemctl is-active {svc}.service 2>/dev/null || echo unknown)"'
+        for sid, svc in pairs
+    )
+    try:
+        out = ssh_exec(cmd)
+        for line in out.splitlines():
+            if ':' in line:
+                k, v = line.split(':', 1)
+                try:
+                    result[int(k.strip())] = v.strip()
+                except ValueError:
+                    pass
+    except Exception:
+        pass
+    return result

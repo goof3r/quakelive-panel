@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Gracze — {{ config.PANEL_TITLE }}{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block body %}
+<div class="admin-layout">
+  {% with active='players' %}{% include 'admin/_sidebar.html' %}{% endwith %}
+
+  <div class="admin-content">
+    <div class="page-title">
+      <span>Gracze online</span>
+      <span class="text-mono text-muted">
+        <span class="dot off" id="pl-dot"></span><span id="pl-state">idle</span>
+        · auto-refresh 10s
+      </span>
+    </div>
+
+    <div class="alert alert-info">
+      Komendy kick/ban/mute są wysyłane przez ZMQ rcon. Wymaga aktywnego serwera i poprawnego hasła rcon.
+    </div>
+
+    <div id="players-by-server">
+      <div class="loading"><div class="spin"></div>Pobieranie listy graczy...</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/panel.js') }}"></script>
+<script>
+const PLAYER_SERVERS = {{ servers | tojson }};
+startPlayersAdmin(PLAYER_SERVERS);
+</script>
+{% endblock %}
+
+{% block bar %}{% endblock %}

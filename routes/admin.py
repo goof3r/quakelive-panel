@@ -195,3 +195,25 @@ def servers():
                            servers=srv_list,
                            message=message,
                            msg_type=msg_type)
+
+
+@admin_bp.route('/players')
+def players():
+    srv_list = database.query(
+        '''SELECT id, name, host, game_port, screen_name
+           FROM servers WHERE enabled=1 ORDER BY sort_order, id'''
+    )
+    return render_template('admin/players.html',
+                           user=auth.current_user(),
+                           servers=srv_list)
+
+
+@admin_bp.route('/monitoring')
+def monitoring():
+    srv_list = database.query(
+        '''SELECT id, name, host, game_port, screen_name
+           FROM servers WHERE enabled=1 ORDER BY sort_order, id'''
+    )
+    return render_template('admin/monitoring.html',
+                           user=auth.current_user(),
+                           servers=srv_list)

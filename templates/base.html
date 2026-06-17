@@ -11,17 +11,25 @@
 
 {% block navbar %}
 <nav class="navbar">
-  <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+  <a class="navbar-brand" href="{{ url_for('main.dashboard') if user else url_for('main.login_page') }}">
     <img src="{{ url_for('static', filename='img/ql-logo.svg') }}" alt="QL" class="navbar-logo">
-    <span class="navbar-title">{{ config.PANEL_TITLE }}</span>
+    <span class="navbar-title">QL<em>panel</em></span>
   </a>
+
   <div class="navbar-nav">
     {% if user %}
       <a class="nav-link {% block nav_dashboard %}{% endblock %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
       {% if user.role == 'admin' %}
       <a class="nav-link {% block nav_admin %}{% endblock %}" href="{{ url_for('admin.index') }}">Admin</a>
       {% endif %}
-      <span class="nav-user">{{ user.name }} [{{ user.role }}]</span>
+
+      <span class="nav-status">
+        <span><span class="dot off" id="hdr-dot"></span><span id="hdr-status">idle</span></span>
+        <span id="hdr-ts">--:--:--</span>
+        <span>in <b id="hdr-cd">--</b>s</span>
+      </span>
+
+      <span class="nav-user">{{ user.name }} <em>[{{ user.role }}]</em></span>
       <a class="nav-link" href="{{ url_for('main.logout') }}">Wyloguj</a>
     {% endif %}
   </div>
@@ -29,6 +37,8 @@
 {% endblock %}
 
 {% block body %}{% endblock %}
+
+{% block bar %}<div id="bar"></div>{% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/panel.js') }}"></script>

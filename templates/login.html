@@ -1,17 +1,15 @@
 {% extends 'base.html' %}
 {% block title %}Login — {{ config.PANEL_TITLE }}{% endblock %}
 {% block navbar %}{% endblock %}
+{% block bar %}{% endblock %}
 
 {% block body %}
-<div class="login-wrapper">
+<div class="login-wrap">
   <div class="login-box">
-    <div class="login-logo">
-      <img src="{{ url_for('static', filename='img/ql-logo.svg') }}" alt="QL" class="login-logo-img">
-      <div class="login-title">{{ config.PANEL_TITLE }}</div>
-      <div class="login-subtitle">Server Management System</div>
+    <div class="login-head">
+      <div class="login-title">QL<em>panel</em></div>
+      <div class="login-sub">// server management //</div>
     </div>
-
-    <hr class="login-divider">
 
     {% if error %}
     <div class="alert alert-error">{{ error }}</div>
@@ -28,12 +26,8 @@
         <input class="form-control" type="password" id="password" name="password"
                placeholder="••••••••" maxlength="128">
       </div>
-      <button type="submit" class="btn btn-login">Zaloguj się</button>
+      <button type="submit" class="btn btn-primary btn-block">zaloguj</button>
     </form>
-
-    <div class="mt-2" style="text-align:center">
-      <span class="text-muted fs-xs">// QUAKE LIVE DEDICATED SERVER PANEL //</span>
-    </div>
   </div>
 </div>
 {% endblock %}

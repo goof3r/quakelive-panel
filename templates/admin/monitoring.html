@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Monitoring — {{ config.PANEL_TITLE }}{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block body %}
+<div class="admin-layout">
+  {% with active='monitoring' %}{% include 'admin/_sidebar.html' %}{% endwith %}
+
+  <div class="admin-content">
+    <div class="page-title">
+      <span>Monitoring serwera</span>
+      <span class="text-mono text-muted">
+        <span class="dot off" id="mon-dot"></span><span id="mon-state">idle</span>
+        · auto-refresh 5s
+      </span>
+    </div>
+
+    <div class="stat-tiles" id="sys-tiles">
+      <div class="stat-tile">
+        <div class="stat-tile-val" id="sys-load">--</div>
+        <div class="stat-tile-lbl">Load avg (1m / 5m / 15m)</div>
+      </div>
+      <div class="stat-tile t2">
+        <div class="stat-tile-val" id="sys-mem">--</div>
+        <div class="stat-tile-lbl">RAM użyte / total</div>
+        <div class="meter"><div class="meter-fill" id="sys-mem-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat-tile t3">
+        <div class="stat-tile-val" id="sys-disk">--</div>
+        <div class="stat-tile-lbl">Dysk / : użyte</div>
+        <div class="meter"><div class="meter-fill" id="sys-disk-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat-tile t4">
+        <div class="stat-tile-val" id="sys-up">--</div>
+        <div class="stat-tile-lbl">Uptime maszyny</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Status usług QL</span>
+        <span class="text-mono text-muted" id="svc-count">--</span>
+      </div>
+      <div class="panel-body tight">
+        <table class="tbl">
+          <thead><tr><th>Serwer</th><th>Host : port</th><th>Screen / service</th><th>Status</th><th>Akcje</th></tr></thead>
+          <tbody id="svc-tbody">
+            <tr><td colspan="5" class="text-muted text-center" style="padding:18px">Sprawdzanie...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Live log (journalctl)</span>
+        <span style="display:flex;gap:8px;align-items:center">
+          <select class="form-control" id="log-srv" style="width:auto;padding:5px 8px;font-size:12px">
+            {% for s in servers %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.screen_name or '—' }})</option>
+            {% endfor %}
+          </select>
+          <select class="form-control" id="log-lines" style="width:auto;padding:5px 8px;font-size:12px">
+            <option value="50">50 linii</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="500">500</option>
+          </select>
+          <label class="text-mono text-muted" style="display:inline-flex;align-items:center;gap:4px">
+            <input type="checkbox" id="log-auto" checked> auto 5s
+          </label>
+          <button class="btn btn-sm btn-secondary" onclick="reloadLog()">odśwież</button>
+        </span>
+      </div>
+      <div class="panel-body">
+        <div class="logbox" id="logbox">Wybierz serwer powyżej i kliknij odśwież.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/panel.js') }}"></script>
+<script>startMonitoring();</script>
+{% endblock %}
+
+{% block bar %}{% endblock %}

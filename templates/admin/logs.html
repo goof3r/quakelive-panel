@@ -4,28 +4,25 @@
 
 {% block body %}
 <div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a class="admin-menu-item" href="{{ url_for('admin.index') }}">Przegląd</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.users') }}">Użytkownicy</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.servers') }}">Serwery</a>
-    <a class="admin-menu-item active" href="{{ url_for('admin.logs') }}">Logi akcji</a>
-    <a class="admin-menu-item" href="{{ url_for('main.dashboard') }}">← Dashboard</a>
-  </aside>
+  {% with active='logs' %}{% include 'admin/_sidebar.html' %}{% endwith %}
 
   <div class="admin-content">
-    <div class="page-title">Logi akcji <span class="text-muted fs-xs">({{ total }} wpisów)</span></div>
+    <div class="page-title">
+      <span>Logi akcji</span>
+      <span class="text-mono text-muted">{{ total }} wpisów</span>
+    </div>
 
-    <form method="GET" class="card mb-2">
-      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
-        <div class="form-group" style="margin:0">
+    <form method="GET" class="panel">
+      <div class="panel-body" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+        <div class="form-group mb-0">
           <label class="form-label">Użytkownik</label>
-          <input class="form-control" type="text" name="user" value="{{ filter_user }}" placeholder="szukaj…">
+          <input class="form-control" type="text" name="user" value="{{ filter_user }}" placeholder="szukaj...">
         </div>
-        <div class="form-group" style="margin:0">
+        <div class="form-group mb-0">
           <label class="form-label">Akcja</label>
           <input class="form-control" type="text" name="action" value="{{ filter_action }}" placeholder="np. restart">
         </div>
-        <div class="form-group" style="margin:0">
+        <div class="form-group mb-0">
           <label class="form-label">Serwer</label>
           <select class="form-control" name="server">
             <option value="">Wszystkie</option>
@@ -34,29 +31,29 @@
             {% endfor %}
           </select>
         </div>
-        <div style="display:flex;gap:8px">
-          <button type="submit" class="btn btn-danger" style="height:38px">Filtruj</button>
-          <a href="{{ url_for('admin.logs') }}" class="btn btn-secondary" style="height:38px;line-height:22px">Reset</a>
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Filtruj</button>
+          <a href="{{ url_for('admin.logs') }}" class="btn btn-secondary">Reset</a>
         </div>
       </div>
     </form>
 
-    <div class="card">
-      <div class="card-body" style="padding:0">
-        <table class="ql-table">
+    <div class="panel">
+      <div class="panel-body tight">
+        <table class="tbl">
           <thead><tr><th>Czas</th><th>User</th><th>Serwer</th><th>Akcja</th><th>Szczegóły</th><th>IP</th></tr></thead>
           <tbody>
           {% for l in logs %}
           <tr>
-            <td class="text-mono fs-xs">{{ l.created_at }}</td>
-            <td class="text-accent">{{ l.username or '—' }}</td>
+            <td class="mono">{{ l.created_at }}</td>
+            <td><span class="text-accent">{{ l.username or '—' }}</span></td>
             <td>{{ l.server_name or '—' }}</td>
-            <td class="fw-bold">{{ l.action }}</td>
-            <td class="text-muted fs-xs" style="max-width:280px;overflow:hidden;text-overflow:ellipsis">{{ l.detail or '' }}</td>
-            <td class="text-mono fs-xs">{{ l.ip or '' }}</td>
+            <td><strong>{{ l.action }}</strong></td>
+            <td class="mono" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">{{ l.detail or '' }}</td>
+            <td class="mono">{{ l.ip or '' }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="6" class="text-muted" style="padding:14px">Brak wyników.</td></tr>
+          <tr><td colspan="6" class="text-muted text-center" style="padding:18px">Brak wyników</td></tr>
           {% endfor %}
           </tbody>
         </table>
@@ -67,10 +64,12 @@
     <div class="btn-group mt-2">
       {% for p in range(1, pages + 1) %}
       <a href="?user={{ filter_user }}&action={{ filter_action }}&server={{ filter_server }}&page={{ p }}"
-         class="btn {{ 'btn-danger' if p == page else 'btn-secondary' }} btn-sm">{{ p }}</a>
+         class="btn btn-sm {{ 'btn-primary' if p == page else 'btn-secondary' }}">{{ p }}</a>
       {% endfor %}
     </div>
     {% endif %}
   </div>
 </div>
 {% endblock %}
+
+{% block bar %}{% endblock %}

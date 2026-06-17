@@ -57,11 +57,12 @@ def logout():
 @main_bp.route('/dashboard')
 @auth.require_login
 def dashboard():
-    servers = database.query(
-        'SELECT * FROM servers WHERE enabled=1 ORDER BY sort_order, id'
+    rows = database.query(
+        '''SELECT id, name, host, game_port, screen_name, sort_order
+           FROM servers WHERE enabled=1 ORDER BY sort_order, id'''
     )
     return render_template('dashboard.html',
-                           servers=servers,
+                           servers=rows,
                            user=auth.current_user())
 
 

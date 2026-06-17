@@ -172,3 +172,103 @@ def zmq_rcon():
     auth.audit(server_id, 'rcon', cmd)
     response = zmq_client.send_rcon(server_id, cmd)
     return jsonify({'ok': True, 'response': response or '(brak odpowiedzi od bridge)'})
+
+
+# ── Admin: zarządzanie graczami ───────────────────────────────────────────────
+
+_PLAYER_ACTIONS = {
+    'kick':    'kick {pid}',
+    'kickban': 'kickban {pid}',
+    'mute':    'mute {pid}',
+    'unmute':  'unmute {pid}',
+    'tempban': 'tempban {pid}',
+}
+
+
+@api_bp.route('/admin/player_action', methods=['POST'])
+def admin_player_action():
+    if session.get('user_role') != 'admin':
+        return jsonify({'ok': False, 'message': 'Tylko admin'}), 403
+
+    body      = request.get_json(force=True) or {}
+    server_id = int(body.get('server_id', 0))
+    pid       = int(body.get('pid', -1))
+    action    = str(body.get('action', '')).strip().lower()
+    pname     = str(body.get('pname', '')).strip()[:64]
+
+    if action not in _PLAYER_ACTIONS:
+        return jsonify({'ok': False, 'message': f'Nieznana akcja: {action}'}), 400
+    if pid < 0:
+        return jsonify({'ok': False, 'message': 'Zły PID gracza'}), 400
+
+    server = database.fetchone(
+        'SELECT * FROM servers WHERE id=? AND enabled=1', (server_id,)
+    )
+    if not server:
+        return jsonify({'ok': False, 'message': 'Serwer nie znaleziony'}), 404
+
+    cmd = _PLAYER_ACTIONS[action].format(pid=pid)
+    detail = f'{action} pid={pid} name={pname}' if pname else f'{action} pid={pid}'
+    auth.audit(server_id, f'player_{action}', detail)
+
+    response = zmq_client.send_rcon(server_id, cmd)
+    if response is None:
+        try:
+            import ssh_client as _sc
+            response = _sc._zmq_rcon(server, cmd)
+        except Exception as e:
+            response = f'(błąd SSH fallback: {e})'
+
+    return jsonify({'ok': True, 'response': response or '(brak odpowiedzi)', 'cmd': cmd})
+
+
+# ── Admin: monitoring (CPU/RAM, status usług, logi) ───────────────────────────
+
+@api_bp.route('/admin/system_stats')
+def admin_system_stats():
+    if session.get('user_role') != 'admin':
+        return jsonify({'ok': False, 'message': 'Tylko admin'}), 403
+    try:
+        stats = ssh_client.get_system_stats()
+    except Exception as e:
+        return jsonify({'ok': False, 'message': str(e)}), 500
+
+    servers = database.query(
+        '''SELECT id, name, host, game_port, screen_name
+           FROM servers WHERE enabled=1 ORDER BY sort_order, id'''
+    )
+    services = {}
+    try:
+        services = ssh_client.get_services_status(servers)
+    except Exception:
+        pass
+
+    enriched = []
+    for s in servers:
+        enriched.append({
+            'id': s['id'],
+            'name': s['name'],
+            'host': s['host'],
+            'port': s['game_port'],
+            'screen_name': s['screen_name'],
+            'status': services.get(s['id'], 'unknown'),
+        })
+
+    return jsonify({'ok': True, 'system': stats, 'services': enriched})
+
+
+@api_bp.route('/admin/server_log/<int:server_id>')
+def admin_server_log(server_id):
+    if session.get('user_role') != 'admin':
+        return jsonify({'ok': False, 'message': 'Tylko admin'}), 403
+    lines = min(500, max(10, int(request.args.get('lines', 100))))
+    server = database.fetchone(
+        'SELECT * FROM servers WHERE id=? AND enabled=1', (server_id,)
+    )
+    if not server:
+        return jsonify({'ok': False, 'message': 'Serwer nie znaleziony'}), 404
+    try:
+        log = ssh_client.get_log(server, lines)
+        return jsonify({'ok': True, 'log': log})
+    except Exception as e:
+        return jsonify({'ok': False, 'message': str(e)}), 500

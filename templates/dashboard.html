@@ -3,81 +3,20 @@
 {% block nav_dashboard %}active{% endblock %}
 
 {% block body %}
-<div class="container">
-  <div class="page-title">Server Dashboard</div>
+<div class="stats" id="stats">
+  <span>Loading...</span>
+</div>
 
-  <div class="card mb-2">
-    <div class="card-header">
-      <span class="card-title">Status serwerów</span>
-      <span class="text-muted fs-xs" id="last-refresh">Auto-refresh co 15s</span>
-    </div>
-  </div>
-
-  <div class="server-grid" id="server-grid">
-    {% for srv in servers %}
-    <div class="server-card offline" id="srv-{{ srv.id }}">
-      <div class="server-card-title">
-        <span class="status-dot offline" id="dot-{{ srv.id }}"></span>
-        {{ srv.name }}
-        <span class="fs-xs text-muted" style="margin-left:8px">:{{ srv.game_port }}</span>
-      </div>
-
-      <div class="server-meta">
-        <span class="server-meta-label">Status</span>
-        <span class="server-meta-value" id="status-{{ srv.id }}">
-          <span class="badge-offline">Ładowanie…</span>
-        </span>
-        <span class="server-meta-label">Mapa</span>
-        <span class="server-meta-value" id="map-{{ srv.id }}">—</span>
-        <span class="server-meta-label">Tryb</span>
-        <span class="server-meta-value" id="gt-{{ srv.id }}">—</span>
-        <span class="server-meta-label">Gracze</span>
-        <span class="server-meta-value" id="pl-{{ srv.id }}">—</span>
-      </div>
-
-      <div class="player-counter">
-        <span class="player-count-num" id="plnum-{{ srv.id }}">0</span>
-        <span class="player-count-max" id="plmax-{{ srv.id }}">/0</span>
-        <span class="player-count-label">graczy</span>
-      </div>
-
-      <div class="hud-bar">
-        <div class="hud-bar-fill" id="bar-{{ srv.id }}" style="width:0%"></div>
-      </div>
-
-      <div class="btn-group mt-2">
-        <a href="{{ url_for('main.server_detail', server_id=srv.id) }}" class="btn btn-secondary btn-sm">Szczegóły</a>
-        {% if user.role == 'admin' %}
-        <button class="btn btn-success btn-sm" onclick="controlServer({{ srv.id }},'start')">Start</button>
-        <button class="btn btn-warning btn-sm" onclick="controlServer({{ srv.id }},'restart')">Restart</button>
-        <button class="btn btn-danger btn-sm"  onclick="controlServer({{ srv.id }},'stop')">Stop</button>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <div class="section-sep">Ostatnie akcje</div>
-  <div class="card">
-    <div class="card-body" style="padding:0">
-      <table class="ql-table">
-        <thead>
-          <tr><th>Czas</th><th>Użytkownik</th><th>Serwer</th><th>Akcja</th><th>IP</th></tr>
-        </thead>
-        <tbody id="audit-tbody">
-          <tr><td colspan="5" class="text-muted" style="padding:14px">Ładowanie…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div id="sections" class="sections">
+  <div class="loading"><div class="spin"></div>Pobieranie statusu serwerów...</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/panel.js') }}"></script>
 <script>
-const SERVERS  = {{ servers | map(attribute='id') | list | tojson }};
+const SERVERS = {{ servers | tojson }};
 const IS_ADMIN = {{ (user.role == 'admin') | tojson }};
-startDashboard(SERVERS);
+startDashboard(SERVERS, IS_ADMIN);
 </script>
 {% endblock %}

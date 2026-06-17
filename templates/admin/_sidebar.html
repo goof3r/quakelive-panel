@@ -1,0 +1,12 @@
+<aside class="admin-sidebar">
+  <div class="admin-sidebar-label">Admin</div>
+  <a class="admin-menu-item {% if active == 'index'      %}active{% endif %}" href="{{ url_for('admin.index') }}">Przegląd</a>
+  <a class="admin-menu-item {% if active == 'servers'    %}active{% endif %}" href="{{ url_for('admin.servers') }}">Serwery</a>
+  <a class="admin-menu-item {% if active == 'players'    %}active{% endif %}" href="{{ url_for('admin.players') }}">Gracze</a>
+  <a class="admin-menu-item {% if active == 'monitoring' %}active{% endif %}" href="{{ url_for('admin.monitoring') }}">Monitoring</a>
+  <a class="admin-menu-item {% if active == 'users'      %}active{% endif %}" href="{{ url_for('admin.users') }}">Użytkownicy</a>
+  <a class="admin-menu-item {% if active == 'logs'       %}active{% endif %}" href="{{ url_for('admin.logs') }}">Logi akcji</a>
+
+  <div class="admin-sidebar-label" style="margin-top:18px">Powrót</div>
+  <a class="admin-menu-item" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</aside>

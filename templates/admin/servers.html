@@ -4,13 +4,7 @@
 
 {% block body %}
 <div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a class="admin-menu-item" href="{{ url_for('admin.index') }}">Przegląd</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.users') }}">Użytkownicy</a>
-    <a class="admin-menu-item active" href="{{ url_for('admin.servers') }}">Serwery</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.logs') }}">Logi akcji</a>
-    <a class="admin-menu-item" href="{{ url_for('main.dashboard') }}">← Dashboard</a>
-  </aside>
+  {% with active='servers' %}{% include 'admin/_sidebar.html' %}{% endwith %}
 
   <div class="admin-content">
     <div class="page-title">Zarządzanie serwerami QL</div>
@@ -19,9 +13,9 @@
     <div class="alert alert-{{ msg_type }}">{{ message }}</div>
     {% endif %}
 
-    <div class="card mb-2">
-      <div class="card-header"><span class="card-title">Dodaj serwer</span></div>
-      <div class="card-body">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Dodaj serwer</span></div>
+      <div class="panel-body">
         <form method="POST">
           <input type="hidden" name="action" value="add">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -78,18 +72,19 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-body" style="padding:0">
-        <table class="ql-table">
-          <thead><tr><th>Nazwa</th><th>Host</th><th>Port</th><th>Screen</th><th>Aktywny</th><th>Akcje</th></tr></thead>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Lista serwerów</span></div>
+      <div class="panel-body tight">
+        <table class="tbl">
+          <thead><tr><th>Nazwa</th><th>Host</th><th>Port</th><th>Screen</th><th>Status</th><th>Akcje</th></tr></thead>
           <tbody>
           {% for s in servers %}
           <tr>
-            <td class="fw-bold">{{ s.name }}</td>
-            <td class="text-mono fs-xs">{{ s.host }}</td>
-            <td class="text-mono fs-xs">{{ s.game_port }}</td>
-            <td class="text-mono fs-xs">{{ s.screen_name or '—' }}</td>
-            <td><span class="{{ 'text-success' if s.enabled else 'text-danger' }}">{{ '✓' if s.enabled else '✗' }}</span></td>
+            <td><strong>{{ s.name }}</strong></td>
+            <td class="mono">{{ s.host }}</td>
+            <td class="mono">{{ s.game_port }}</td>
+            <td class="mono">{{ s.screen_name or '—' }}</td>
+            <td><span class="{{ 'b-on' if s.enabled else 'b-off' }}">{{ '● ON' if s.enabled else '○ OFF' }}</span></td>
             <td>
               <div class="btn-group">
                 <form method="POST" style="display:inline">
@@ -109,7 +104,7 @@
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="6" class="text-muted" style="padding:14px">Brak serwerów.</td></tr>
+          <tr><td colspan="6" class="text-muted text-center" style="padding:18px">Brak serwerów</td></tr>
           {% endfor %}
           </tbody>
         </table>
@@ -125,3 +120,5 @@ function ap(v) {
 }
 </script>
 {% endblock %}
+
+{% block bar %}{% endblock %}

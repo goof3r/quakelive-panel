@@ -4,13 +4,7 @@
 
 {% block body %}
 <div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a class="admin-menu-item" href="{{ url_for('admin.index') }}">Przegląd</a>
-    <a class="admin-menu-item active" href="{{ url_for('admin.users') }}">Użytkownicy</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.servers') }}">Serwery</a>
-    <a class="admin-menu-item" href="{{ url_for('admin.logs') }}">Logi akcji</a>
-    <a class="admin-menu-item" href="{{ url_for('main.dashboard') }}">← Dashboard</a>
-  </aside>
+  {% with active='users' %}{% include 'admin/_sidebar.html' %}{% endwith %}
 
   <div class="admin-content">
     <div class="page-title">Zarządzanie użytkownikami</div>
@@ -19,45 +13,46 @@
     <div class="alert alert-{{ msg_type }}">{{ message }}</div>
     {% endif %}
 
-    <div class="card mb-2">
-      <div class="card-header"><span class="card-title">Dodaj użytkownika</span></div>
-      <div class="card-body">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Dodaj użytkownika</span></div>
+      <div class="panel-body">
         <form method="POST" style="display:grid;grid-template-columns:1fr 1fr 160px auto;gap:12px;align-items:end">
           <input type="hidden" name="action" value="add">
-          <div class="form-group" style="margin:0">
+          <div class="form-group mb-0">
             <label class="form-label">Login</label>
             <input class="form-control" type="text" name="username" maxlength="64" placeholder="username">
           </div>
-          <div class="form-group" style="margin:0">
+          <div class="form-group mb-0">
             <label class="form-label">Hasło</label>
             <input class="form-control" type="password" name="password" placeholder="min. 6 znaków">
           </div>
-          <div class="form-group" style="margin:0">
+          <div class="form-group mb-0">
             <label class="form-label">Rola</label>
             <select class="form-control" name="role">
               <option value="viewer">viewer</option>
               <option value="admin">admin</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-success" style="height:38px">Dodaj</button>
+          <button type="submit" class="btn btn-success">+ Dodaj</button>
         </form>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-body" style="padding:0">
-        <table class="ql-table">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Lista użytkowników</span></div>
+      <div class="panel-body tight">
+        <table class="tbl">
           <thead><tr><th>ID</th><th>Login</th><th>Rola</th><th>Ostatnie logowanie</th><th>Akcje</th></tr></thead>
           <tbody>
           {% for u in users_list %}
           <tr>
-            <td class="text-muted fs-xs">{{ u.id }}</td>
-            <td class="fw-bold {{ 'text-accent' if u.id == user.id else '' }}">
-              {{ u.username }}
+            <td class="mono">#{{ u.id }}</td>
+            <td>
+              <strong>{{ u.username }}</strong>
               {% if u.id == user.id %}<span class="text-muted fs-xs"> (ty)</span>{% endif %}
             </td>
-            <td><span class="{{ 'text-accent' if u.role == 'admin' else 'text-muted' }} text-hud fs-xs">{{ u.role }}</span></td>
-            <td class="text-muted text-mono fs-xs">{{ u.last_login or 'Nigdy' }}</td>
+            <td><span class="pill {{ 'role-admin' if u.role == 'admin' else 'role-viewer' }}">{{ u.role }}</span></td>
+            <td class="mono">{{ u.last_login or 'nigdy' }}</td>
             <td>
               <div class="btn-group">
                 <form method="POST" style="display:inline-flex;gap:6px"
@@ -65,8 +60,8 @@
                   <input type="hidden" name="action" value="change_password">
                   <input type="hidden" name="user_id" value="{{ u.id }}">
                   <input class="form-control" type="password" id="np_{{ u.id }}" name="new_password"
-                         placeholder="nowe hasło" style="width:130px;height:30px;font-size:0.78rem">
-                  <button type="submit" class="btn btn-warning btn-sm">Zmień hasło</button>
+                         placeholder="nowe hasło" style="width:140px;padding:5px 8px;font-size:12px">
+                  <button type="submit" class="btn btn-warning btn-sm">Zmień</button>
                 </form>
                 {% if u.id != user.id %}
                 <form method="POST" style="display:inline"
@@ -87,3 +82,5 @@
   </div>
 </div>
 {% endblock %}
+
+{% block bar %}{% endblock %}

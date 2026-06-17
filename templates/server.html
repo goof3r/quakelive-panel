@@ -4,24 +4,29 @@
 
 {% block body %}
 <div class="container">
-  <div class="page-title">{{ server.name }}</div>
+  <div class="page-title">
+    <span>{{ server.name }}</span>
+    <span class="text-mono" style="color:var(--dim);font-size:11px">
+      <span class="dot off" id="srv-dot"></span><span id="srv-state">sprawdzanie...</span>
+    </span>
+  </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Informacje serwera</span>
-        <span id="srv-status-badge" class="badge-offline">Sprawdzanie…</span>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Info</span>
+        <span id="srv-status-badge" class="badge off">offline</span>
       </div>
-      <div class="card-body">
-        <table class="ql-table">
-          <tr><td class="text-muted fs-xs">Host</td><td class="text-mono">{{ server.host }}:{{ server.game_port }}</td></tr>
-          <tr><td class="text-muted fs-xs">Screen</td><td class="text-mono">{{ server.screen_name }}</td></tr>
-          <tr><td class="text-muted fs-xs">ZMQ Rcon</td><td class="text-mono">:{{ server.zmq_rcon_port or (server.game_port + 1000) }}</td></tr>
-          <tr><td class="text-muted fs-xs">ZMQ Stats</td><td class="text-mono">:{{ server.zmq_stats_port or server.game_port }}</td></tr>
-          <tr><td class="text-muted fs-xs">Mapa</td><td id="srv-map">—</td></tr>
-          <tr><td class="text-muted fs-xs">Tryb</td><td id="srv-gt">—</td></tr>
-          <tr><td class="text-muted fs-xs">Gracze</td><td id="srv-players">—</td></tr>
+      <div class="panel-body">
+        <table class="tbl">
+          <tr><td class="mono">Host</td><td class="mono">{{ server.host }}:{{ server.game_port }}</td></tr>
+          <tr><td class="mono">Screen</td><td class="mono">{{ server.screen_name or '—' }}</td></tr>
+          <tr><td class="mono">ZMQ Rcon</td><td class="mono">:{{ server.zmq_rcon_port or (server.game_port + 1000) }}</td></tr>
+          <tr><td class="mono">ZMQ Stats</td><td class="mono">:{{ server.zmq_stats_port or server.game_port }}</td></tr>
+          <tr><td class="mono">Mapa</td><td id="srv-map">—</td></tr>
+          <tr><td class="mono">Tryb</td><td id="srv-gt">—</td></tr>
+          <tr><td class="mono">Gracze</td><td id="srv-players">—</td></tr>
         </table>
 
         {% if user.role == 'admin' %}
@@ -35,52 +40,51 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Gracze online</span>
-        <span class="text-muted fs-xs" id="players-count">0</span>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Gracze online</span>
+        <span class="text-mono" id="players-count">0</span>
       </div>
-      <div class="card-body" style="padding:0">
-        <table class="ql-table">
-          <thead><tr><th>#</th><th>Nick</th><th>Score</th><th>Ping</th></tr></thead>
+      <div class="panel-body tight">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Nick</th><th style="text-align:right">Score</th><th style="text-align:right">Ping</th></tr></thead>
           <tbody id="player-tbody">
-            <tr><td colspan="4" class="text-muted" style="padding:14px">Brak graczy</td></tr>
+            <tr><td colspan="4" class="text-muted text-center" style="padding:18px">Brak graczy</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">ZMQ Live Stats</span>
-      <span class="text-muted fs-xs">Auto-refresh co 5s</span>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">ZMQ Live Stats</span>
+      <span class="text-mono text-muted">refresh 5s</span>
     </div>
-    <div class="card-body" style="padding:10px">
+    <div class="panel-body">
       <div class="zmq-feed" id="zmq-feed">
         <div class="zmq-event">
           <span class="zmq-event-time">--:--:--</span>
           <span class="zmq-event-type">SYSTEM</span>
-          <span class="zmq-event-body">Oczekiwanie na dane ZMQ…</span>
+          <span class="zmq-event-body">Oczekiwanie na dane ZMQ...</span>
         </div>
       </div>
     </div>
   </div>
 
   {% if user.role == 'admin' %}
-  <div class="card mt-2">
-    <div class="card-header">
-      <span class="card-title">Rcon Console</span>
-      <span class="text-muted fs-xs">Tylko dla admina</span>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Rcon Console</span>
+      <span class="text-mono text-muted">admin only</span>
     </div>
-    <div class="card-body">
-      <div class="rcon-console" id="rcon-output">// Quake Live Rcon Console
-// Wpisz komendę i naciśnij Enter lub kliknij Wyślij
-</div>
-      <div class="rcon-input-row">
-        <input class="rcon-input" type="text" id="rcon-cmd"
+    <div class="panel-body">
+      <div class="console" id="rcon-output">// Quake Live Rcon Console
+// Wpisz komendę i naciśnij Enter</div>
+      <div class="console-input-row">
+        <input class="console-input" type="text" id="rcon-cmd"
                placeholder="np. status, map campgrounds ffa, say Hello" maxlength="256">
-        <button class="btn btn-danger" onclick="sendRcon()">Wyślij</button>
+        <button class="btn btn-primary" onclick="sendRcon()">Wyślij</button>
       </div>
     </div>
   </div>
@@ -100,7 +104,7 @@ function srvControl(action) {
   const msg = document.getElementById('ctrl-msg');
   msg.className = 'alert alert-info mt-1';
   msg.style.display = 'block';
-  msg.textContent = 'Wykonuję: ' + action + '…';
+  msg.textContent = 'Wykonuję: ' + action + '...';
   fetch('/api/control', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
